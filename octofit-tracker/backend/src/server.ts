@@ -1,52 +1,24 @@
-import express, { RequestHandler } from 'express';
-import mongoose from 'mongoose';
-import './config/database';
-
-const port = Number(process.env.PORT) || 8000;
-const codespaceName = process.env.CODESPACE_NAME;
-const apiBaseUrl = codespaceName
-  ? `https://${codespaceName}-${port}.app.github.dev`
-  : `http://localhost:${port}`;
-
-const userModel = mongoose.model(
-  'User',
-  new mongoose.Schema({}, { strict: false, collection: 'users' }),
-);
-const activityModel = mongoose.model(
-  'Activity',
-  new mongoose.Schema({}, { strict: false, collection: 'activities' }),
-);
+import express from 'express';
+import db from './config/database.js';
+import apiRouter from './routes/api.js';
 
 const app = express();
+const port = Number(process.env.PORT ?? 8000);
+const codespaceName = process.env.CODESPACE_NAME;
+const apiBaseUrl = codespaceName
+  ? `https://${codespaceName}-8000.app.github.dev`
+  : `http://localhost:${port}`;
+
 app.use(express.json());
+app.use('/api', apiRouter);
 
-const listUsers: RequestHandler = async (_request, response, next) => {
-  try {
-    response.json(await userModel.find().lean().exec());
-  } catch (error) {
-    next(error);
-  }
-};
-
-const listActivities: RequestHandler = async (_request, response, next) => {
-  try {
-    response.json(await activityModel.find().lean().exec());
-  } catch (error) {
-    next(error);
-  }
-};
-
-app.get('/api/users', listUsers);
-app.get('/api/activities', listActivities);
-
-async function startServer() {
-  await mongoose.connection.asPromise();
-  app.listen(port, () => {
-    console.log(`OctoFit API listening at ${apiBaseUrl}`);
+app.get('/api/health', (_request, response) => {
+  response.json({
+    status: 'ok',
+    database: db.readyState === 1 ? 'connected' : 'disconnected',
   });
-}
+});
 
-startServer().catch((error: unknown) => {
-  console.error('Unable to start the OctoFit API:', error);
-  process.exitCode = 1;
+app.listen(port, '0.0.0.0', () => {
+  console.log(`OctoFit API listening at ${apiBaseUrl}`);
 });
