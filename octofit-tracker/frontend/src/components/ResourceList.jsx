@@ -10,7 +10,7 @@ function displayValue(value) {
   return String(value)
 }
 
-export default function ResourceList({ resource, title, description, fields }) {
+export default function ResourceList({ endpoint, resource, title, description, fields }) {
   const [records, setRecords] = useState([])
   const [status, setStatus] = useState('loading')
   const [error, setError] = useState('')
@@ -18,7 +18,7 @@ export default function ResourceList({ resource, title, description, fields }) {
   useEffect(() => {
     const controller = new AbortController()
 
-    fetchCollection(resource, controller.signal)
+    fetchCollection(endpoint, controller.signal)
       .then((items) => {
         setRecords(items)
         setStatus('ready')
@@ -30,7 +30,7 @@ export default function ResourceList({ resource, title, description, fields }) {
       })
 
     return () => controller.abort()
-  }, [resource])
+  }, [endpoint, resource])
 
   return (
     <section aria-labelledby={`${resource}-title`}>
